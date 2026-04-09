@@ -1,46 +1,36 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ESP32Servo.h>
+#include "secrets.h"
 
-const char* ssid = "WIRELESS_NETWORK";
-const char* password = "WIRELESS_PASSWORD";
-const char* mqtt_server = "broker.hivemq.com"; // for testing purposes
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
+const char* mqtt_server = MQTT_SERVER;
 const int mqtt_port = 1883;
 const char* topic = "esp32/servo";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// const int DUTY_OFF = 105;
-// const int DUTY_ON = 180;
-
 Servo servo;
 const int servoPin = 18;
 
-void set_duty_cycle(int duty_cycle) {
-  // attach, write, detach so light switch can be used independently
+void set_duty_cycle(int angle) {
+  // attach/detach so the physical switch can be used independently
   servo.attach(servoPin);
-  servo.write(duty_cycle);
+  servo.write(angle);
   servo.detach();
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-
-  // Read message in from MQTT topic esp32/servo
   String message = "";
   for (int i = 0; i < length; i++) {
     message += (char)payload[i];
   }
-
-  int duty_cycle = message.toInt();
-  set_duty_cycle(duty_cycle);
+  set_duty_cycle(message.toInt());
 }
 
 void setup_wifi() {
-  Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
 
@@ -51,20 +41,11 @@ void setup_wifi() {
     Serial.print(".");
   }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.print("IP address: ");
+  Serial.println("\nWiFi connected — IP: ");
   Serial.println(WiFi.localIP());
 }
 
-void setup_mqtt() {\
-  Serial.println();
-  Serial.print("Connecting to server ");
-  Serial.println(mqtt_server);
-  Serial.println(" on port ");
-  Serial.println(mqtt_port);
-
-  // Setup MQTT callback
+void setup_mqtt() {
   client.setServer(mqtt_server, mqtt_port);
   client.setCallback(callback);
 
@@ -74,18 +55,15 @@ void setup_mqtt() {\
     Serial.println("Connection to MQTT broker failed");
   }
 
-  client.subscribe("esp32/servo");
+  client.subscribe(topic);
 }
 
 void setup() {
   Serial.begin(115200);
-  delay(10);
-
-  setup_wifi(); // Internet
-  setup_mqtt(); // Callback
+  setup_wifi();
+  setup_mqtt();
 }
 
 void loop() {
-  // Maintain MQTT connection and handle incoming messages
   client.loop();
 }

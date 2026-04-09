@@ -1,15 +1,16 @@
 # ESP32
 
-### Blink LED
-Self-explanatory
-
 ### Servo Control
+
 #### servo.py
-Used for min, mid, max positions
+Cycles the servo through min, mid, and max positions using `gpiozero` on GPIO 18. Run directly on the host device.
 
 #### servo_control_wireless.ino
-This methodology use MQTT to connect to a public server to control the motor
-positions via angular commands. See example as follows.
+Connects to WiFi and subscribes to the MQTT topic `esp32/servo`. Publishes an integer angle (0–180) to move the servo.
 
-`mosquitto_pub -h broker.hivemq.com -t esp32/servo -m "int: angle"` <br>
-`mosquitto_pub -h broker.hivemq.com -t esp32/servo -m "180"`
+**Setup:** Copy `servo-control/secrets.h.example` to `servo-control/secrets.h` and fill in your WiFi and MQTT broker details.
+
+**Usage:**
+```bash
+mosquitto_pub -h <mqtt_server> -t esp32/servo -m "180"
+```
